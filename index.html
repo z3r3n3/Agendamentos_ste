@@ -5,60 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Agendamento Sala de Tecnologia - EE Joelina</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; padding: 10px; margin: 0; }
+        :root {
+            --cor-sala: #0056b3; 
+            --cor-recurso: #d35400; 
+            --bg-sala: #ebf5ff; 
+            --bg-recurso: #ffeedb; 
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-sala); padding: 10px; margin: 0; transition: background-color 0.4s; }
         .container { max-width: 1150px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #1a5276; margin-bottom: 5px; font-size: 1.5rem; }
         .sub { text-align: center; color: #666; margin-bottom: 25px; font-size: 0.9em; }
         
-        .seletor-data { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; padding: 15px; background: #e8f4fd; border-radius: 8px; border: 1px solid #b3d7f2; }
+        .seletor-data { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 15px; padding: 15px; background: #e8f4fd; border-radius: 8px; border: 1px solid #b3d7f2; }
         input[type="date"] { width: 100%; max-width: 250px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; cursor: pointer; }
         
-        /* Container para permitir scroll lateral em telas pequenas */
+        .btn-toggle-recursos { 
+            background: var(--cor-recurso); color: white; border: none; padding: 14px 25px; 
+            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;
+            margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: 0.3s;
+            width: 100%; max-width: 400px;
+        }
+        .btn-toggle-recursos.modo-sala { background: var(--cor-sala); }
+        .btn-toggle-recursos:hover { transform: scale(1.02); opacity: 0.9; }
+
         .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; background: #fff; min-width: 700px; }
-        th { background-color: #2980b9; color: white; padding: 12px; font-size: 14px; }
+        
+        th { background-color: var(--cor-sala); color: white; padding: 12px; font-size: 14px; transition: background-color 0.4s; }
+        .recurso-header th { background-color: var(--cor-recurso); }
+
         td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         
         .editando { background-color: #fff3cd !important; transition: 0.3s; border: 2px solid #f1c40f !important; }
         .ocupado { background-color: #f8d7da !important; color: #721c24; cursor: not-allowed; }
 
-        input, textarea { width: 92%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; }
-        input:focus, textarea:focus { border-color: #2980b9; outline: none; background-color: #fff; }
-        input:disabled, textarea:disabled { background: transparent; border: none; color: #721c24; font-weight: bold; text-align: center; }
+        input, textarea, select { width: 92%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; }
+        input:focus, textarea:focus, select:focus { border-color: #2980b9; outline: none; background-color: #fff; }
+        input:disabled, textarea:disabled, select:disabled { background: transparent; border: none; color: #721c24; font-weight: bold; text-align: center; appearance: none; }
 
         .btn-salvar { background: #27ae60; color: white; border: none; padding: 18px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 18px; margin-top: 20px; font-weight: bold; transition: background 0.3s; }
         .btn-salvar:hover { background: #219150; }
         #loading { font-weight: bold; color: #2980b9; margin-top: 10px; }
 
-        /* Ajustes específicos para celular */
-        @media (min-width: 600px) {
-            .seletor-data { flex-direction: row; justify-content: center; }
-            body { padding: 20px; }
-        }
+        @media (min-width: 600px) { .seletor-data { flex-direction: row; justify-content: center; } body { padding: 20px; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>AGENDAMENTO SALA DE TECNOLOGIA</h2>
+    <h2 id="titulo-pagina">AGENDAMENTO SALA DE TECNOLOGIA</h2>
     <p class="sub">Gestão PCPI - EE Profª Joelina de Almeida Xavier</p>
 
     <div class="seletor-data">
-        <label>Selecione a Data: </label>
-        <input type="date" id="data-aula" onchange="consultarAgenda()" 
-               min="2026-02-09" 
-               max="2026-04-30">
+        <label>Data para Agendamento: </label>
+        <input type="date" id="data-aula" onchange="consultarAgenda()" min="2026-02-09" max="2026-04-30">
+    </div>
+
+    <div style="text-align: center;">
+        <button class="btn-toggle-recursos" id="btnToggle" onclick="alternarModo()">🔄 AGENDAR RECURSOS</button>
+        <br>
         <span id="loading" style="display:none;">⏳ Sincronizando...</span>
     </div>
     
     <div class="table-container">
-        <table>
+        <table id="tabela-principal">
             <thead>
-                <tr>
+                <tr id="header-row">
                     <th>Tempo</th>
                     <th>Horário (4º/5º)</th>
                     <th>Horário (6º/9º)</th>
-                    <th>Turma</th>
+                    <th id="label-coluna-dinamica">Turma</th>
                     <th>Professor</th>
                     <th>Atividade</th>
                 </tr>
@@ -72,11 +89,24 @@
 
 <script>
     const CONST_URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzYl_3pGWnjpzwuh2PlgEoBCLQTfqZ1reT4wp_NkW_xX88vtGdxdQF0FDQ68KTVA7M/exec";
+    
+    let modoRecursos = false;
+
+    const listaRecursos = [
+        "Caixa de Som Grande", 
+        "Laboratório Didático Móvel (LDM)",
+        "Microfone Sem Fio",
+        "Projetor Multimídia (BOB/AMARELINHO) 1", 
+	"Projetor Multimídia (BOB/AMARELINHO) 2",
+	"Projetor Multimídia (BOB/AMARELINHO) 3"
+        
+        
+    ];
 
     const horarios = [
         { id: "1T", t: "1º Tempo", h1: "07:25 - 08:15", h2: "07:25 - 08:15" },
         { id: "2T", t: "2º Tempo", h1: "08:15 - 09:05", h2: "08:15 - 09:05" },
-        { id: "3T", t: "3º Tempo", h1: "09:20 - 10:10", h2: "09:05 - 10:55" },
+        { id: "3T", t: "3º Tempo", h1: "09:20 - 10:10", h2: "09:05 - 09:55" },
         { id: "4T", t: "4º Tempo", h1: "10:10 - 11:00", h2: "10:10 - 11:00" },
         { id: "5T_F1", t: "5º Tempo", h1: "12:00 - 12:50", h2: "---" }, 
         { id: "5T_F2", t: "5º Tempo", h1: "---",           h2: "11:00 - 11:50" },
@@ -85,30 +115,106 @@
         { id: "8T", t: "8º Tempo", h1: "14:45 - 15:35", h2: "14:45 - 15:35" }
     ];
 
-    function desenharTabela() {
+    function alternarModo() {
+        modoRecursos = !modoRecursos;
+        const btn = document.getElementById('btnToggle');
+        const titulo = document.getElementById('titulo-pagina');
+        const labelCol = document.getElementById('label-coluna-dinamica');
+        const headerRow = document.getElementById('header-row');
+
+        if (modoRecursos) {
+            btn.innerText = "🏠 AGENDAR SALA DE TECNOLOGIA";
+            btn.classList.add('modo-sala'); 
+            titulo.innerText = "AGENDAMENTO DE RECURSOS";
+            labelCol.innerText = "Recurso";
+            headerRow.classList.add('recurso-header');
+            document.body.style.backgroundColor = "var(--bg-recurso)";
+        } else {
+            btn.innerText = "🔄 AGENDAR RECURSOS";
+            btn.classList.remove('modo-sala');
+            titulo.innerText = "AGENDAMENTO SALA DE TECNOLOGIA";
+            labelCol.innerText = "Turma";
+            headerRow.classList.remove('recurso-header');
+            document.body.style.backgroundColor = "var(--bg-sala)";
+        }
+        consultarAgenda(); 
+    }
+
+    // NOVA FUNÇÃO DESENHAR TABELA: Dinâmica e Inteligente
+    function desenharTabela(agendados = []) {
         const corpo = document.getElementById('grade-horarios');
         corpo.innerHTML = "";
+        
         horarios.forEach((item) => {
-            corpo.innerHTML += `
-                <tr id="linha-${item.id}">
-                    <td><strong>${item.t}</strong></td>
-                    <td>${item.h1}</td>
-                    <td>${item.h2}</td>
-                    <td><input type="text" id="turma-${item.id}" oninput="validarLinha('${item.id}')" placeholder="Ex: 5ºA"></td>
-                    <td><input type="text" id="prof-${item.id}" oninput="validarLinha('${item.id}')" placeholder="Seu Nome"></td>
-                    <td><textarea id="ativ-${item.id}" rows="1" oninput="validarLinha('${item.id}')" placeholder="Conteúdo"></textarea></td>
-                </tr>`;
+            // Filtra o que já está salvo no banco de dados para este tempo e modo
+            const reservasNesteTempo = agendados.filter(reserva => {
+                const eRecurso = listaRecursos.includes(reserva.turma);
+                return reserva.id_unico === item.id && ((modoRecursos && eRecurso) || (!modoRecursos && !eRecurso));
+            });
+
+            // 1. Desenha as linhas que já estão travadas (vermelhas)
+            reservasNesteTempo.forEach(reserva => {
+                corpo.innerHTML += `
+                    <tr class="ocupado">
+                        <td><strong>${item.t}</strong></td>
+                        <td>${item.h1}</td>
+                        <td>${item.h2}</td>
+                        <td><input type="text" value="${reserva.turma}" disabled></td>
+                        <td><input type="text" value="${reserva.professor}" disabled></td>
+                        <td><textarea rows="1" disabled>${reserva.atividade}</textarea></td>
+                    </tr>`;
+            });
+
+            // 2. Calcula se ainda tem vaga e quais recursos sobraram
+            let mostrarLinhaLivre = true;
+            let campoDinamico = "";
+
+            if (modoRecursos) {
+                // Descobre o que já pegaram e tira da lista
+                const recursosOcupados = reservasNesteTempo.map(r => r.turma);
+                const recursosLivres = listaRecursos.filter(r => !recursosOcupados.includes(r));
+
+                if (recursosLivres.length === 0) {
+                    mostrarLinhaLivre = false; // Acabaram os recursos neste tempo
+                } else {
+                    campoDinamico = `
+                        <select id="turma-${item.id}" onchange="validarLinha('${item.id}')">
+                            <option value="">Selecione...</option>
+                            ${recursosLivres.map(r => `<option value="${r}">${r}</option>`).join('')}
+                        </select>`;
+                }
+            } else {
+                // Modo sala: Só existe uma sala, se tiver 1 reserva, já bloqueia
+                if (reservasNesteTempo.length > 0) {
+                    mostrarLinhaLivre = false;
+                }
+                campoDinamico = `<input type="text" id="turma-${item.id}" oninput="validarLinha('${item.id}')" placeholder="Ex: 9º B">`;
+            }
+
+            // 3. Desenha a linha vazia para o professor preencher (só se tiver vaga)
+            if (mostrarLinhaLivre) {
+                corpo.innerHTML += `
+                    <tr id="linha-${item.id}">
+                        <td><strong>${item.t}</strong></td>
+                        <td>${item.h1}</td>
+                        <td>${item.h2}</td>
+                        <td>${campoDinamico}</td>
+                        <td><input type="text" id="prof-${item.id}" oninput="validarLinha('${item.id}')" placeholder="Seu Nome"></td>
+                        <td><textarea id="ativ-${item.id}" rows="1" oninput="validarLinha('${item.id}')" placeholder="Conteúdo"></textarea></td>
+                    </tr>`;
+            }
         });
     }
 
     function validarLinha(id) {
         const linha = document.getElementById(`linha-${id}`);
-        const turma = document.getElementById(`turma-${id}`).value.trim();
+        if (!linha) return; // Proteção extra
+
+        const turmaRecurso = document.getElementById(`turma-${id}`).value.trim();
         const prof = document.getElementById(`prof-${id}`).value.trim();
         const ativ = document.getElementById(`ativ-${id}`).value.trim();
         
-        // A linha fica amarela se os três campos estiverem preenchidos e não estiver ocupada
-        if (turma !== "" && prof !== "" && ativ !== "" && !linha.classList.contains('ocupado')) {
+        if (turmaRecurso !== "" && prof !== "" && ativ !== "" && !linha.classList.contains('ocupado')) {
             linha.classList.add('editando');
         } else {
             linha.classList.remove('editando');
@@ -117,37 +223,33 @@
 
     async function consultarAgenda() {
         const data = document.getElementById('data-aula').value;
-        if (!data) return;
+        if (!data) {
+            desenharTabela([]); // Se não tem data, mostra tudo vazio
+            return;
+        }
+        
         document.getElementById('loading').style.display = "inline";
-        desenharTabela();
 
         try {
             const response = await fetch(`${CONST_URL_SCRIPT}?data=${data}`);
             const agendados = await response.json();
-            agendados.forEach(reserva => {
-                const linha = document.getElementById(`linha-${reserva.id_unico}`);
-                if (linha) {
-                    linha.classList.add('ocupado');
-                    document.getElementById(`turma-${reserva.id_unico}`).value = reserva.turma;
-                    document.getElementById(`prof-${reserva.id_unico}`).value = reserva.professor;
-                    document.getElementById(`ativ-${reserva.id_unico}`).value = reserva.atividade;
-                    document.getElementById(`turma-${reserva.id_unico}`).disabled = true;
-                    document.getElementById(`prof-${reserva.id_unico}`).disabled = true;
-                    document.getElementById(`ativ-${reserva.id_unico}`).disabled = true;
-                }
-            });
-        } catch (err) { console.error(err); }
+            desenharTabela(agendados); // Passa os dados para a função construir a tabela inteligente
+        } catch (err) { 
+            console.error(err); 
+            desenharTabela([]); // Em caso de erro, não quebra a tela
+        }
         document.getElementById('loading').style.display = "none";
     }
 
     async function salvarTudo() {
         const data = document.getElementById('data-aula').value;
         if (!data) { alert("Escolha uma data!"); return; }
-
+        
         const agendamentos = [];
         horarios.forEach(h => {
             const linha = document.getElementById(`linha-${h.id}`);
-            if (linha.classList.contains('editando')) {
+            // Confere se a linha existe e está amarelinha
+            if (linha && linha.classList.contains('editando')) {
                 agendamentos.push({
                     data, id_unico: h.id, tempo: h.t,
                     turma: document.getElementById(`turma-${h.id}`).value,
@@ -156,29 +258,25 @@
                 });
             }
         });
-
-        if (agendamentos.length === 0) {
-            alert("⚠️ Preencha Turma, Professor e Atividade para salvar o horário.");
-            return;
-        }
-
+        
+        if (agendamentos.length === 0) { alert("⚠️ Preencha todos os campos da linha antes de salvar."); return; }
+        
         const btn = document.getElementById('btnSalvar');
-        btn.disabled = true;
-        btn.innerText = "⏳ Gravando...";
-
+        btn.disabled = true; btn.innerText = "⏳ Gravando...";
+        
         try {
-            for (const item of agendamentos) {
-                await fetch(CONST_URL_SCRIPT, { method: 'POST', body: JSON.stringify(item) });
+            for (const item of agendamentos) { 
+                await fetch(CONST_URL_SCRIPT, { method: 'POST', body: JSON.stringify(item) }); 
             }
-            alert("✅ Agendamentos salvos!");
-            consultarAgenda();
+            alert("✅ Agendamento salvo com sucesso!");
+            consultarAgenda(); // Recarrega a tela para já sumir com os recursos escolhidos
         } catch (err) { alert("Erro ao salvar."); }
-        btn.disabled = false;
-        btn.innerText = "💾 Salvar Agendamentos Completos";
+        
+        btn.disabled = false; btn.innerText = "💾 Salvar Agendamentos Completos";
     }
-
-    desenharTabela();
+    
+    // Inicia desenhando a tabela vazia ao carregar a página
+    desenharTabela([]);
 </script>
 </body>
 </html>
-
